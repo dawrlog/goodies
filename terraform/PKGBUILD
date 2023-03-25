@@ -1,0 +1,24 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-terraform
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official Terraform client used at Dawrlog. It updates from official repository."
+arch=("x86_64")
+url="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+license=('custom')
+noextract=()
+source=("https://releases.hashicorp.com/terraform/1.4.2/terraform_1.4.2_linux_amd64.zip")
+sha512sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/terraform"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  mv "${srcdir}/terraform" "${pkgdir}${pkgpath}"
+  export set=$PATH:"${pkgdir}${pkgpath}"
+}
+

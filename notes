@@ -1,0 +1,425 @@
+# kde
+Content for KDE Store.
+
+# Create key
+gpg --full-generate-key
+
+# Send it:
+gpg --send-keys EE4CA15158DEBAE3D301BBFFFB4E044553D5EADB
+
+# Recover it
+gpg --recv-keys EE4CA15158DEBAE3D301BBFFFB4E044553D5EADB
+
+# Configure Pacman to use it:
+sudo pacman-key --recv-keys EE4CA15158DEBAE3D301BBFFFB4E044553D5EADB
+sudo pacman-key --lsign-key EE4CA15158DEBAE3D301BBFFFB4E044553D5EADB
+
+# Update the following:
+/etc/makepkg.conf
+GPGKEY="FB4E044553D5EADB"
+
+# Download desired packaged and build it by either create new PKGBUILD of clone from git, the following command will sign and build it.  
+makepkg -Ccrs --sign
+
+
+# Install steps (https://gist.github.com/mjnaderi/28264ce68f87f52f2cabb823a503e673)
+https://ruoxi.wang/2018/11/02/create-an-yubikey-encrypted-arch-linux-installation/
+https://www.sainnhe.dev/post/create-personal-arch-linux-package-repository/
+http://0pointer.net/blog/unlocking-luks2-volumes-with-tpm2-fido2-pkcs11-security-hardware-on-systemd-248.html
+
+
+
+
+
+https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#Btrfs_subvolumes_with_swap
+https://wiki.archlinux.org/title/Dm-crypt/Device_encryption#With_a_keyfile_embedded_in_the_initramfs
+https://wiki.archlinux.org/title/Dm-crypt/System_configuration#Using_systemd-cryptsetup-generator
+https://wiki.archlinux.org/title/Dm-crypt/Swap_encryption
+https://wiki.archlinux.org/title/User:M0p/LUKS_Root_on_Btrfs
+https://bbs.archlinux.org/viewtopic.php?id=197096
+https://github.com/agherzan/yubikey-full-disk-encryption#usage
+
+# Update and install the packages
+reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
+pacman-key --init
+pacman -Sy archlinux-keyring
+
+# Creating physical partition
+cat /dev/zero > /dev/nvme0n1
+fdisk /dev/nvme0n1 
+
+cryptsetup -c aes-xts-plain64 -h sha512 -s 512 --use-random luksFormat --type luks1 /dev/nvme0n1p2
+cryptsetup open /dev/nvme0n1p2 host
+<!-- cryptsetup -c aes-xts-plain64 -h sha512 -s 512 --use-random luksFormat --type luks2 /dev/nvme0n1p2 -->
+<!-- systemd-cryptenroll --fido2-device=auto /dev/nvme0n1p2 -->
+<!-- systemd-cryptenroll --fido2-device=auto /dev/nvme0n1p2 -->
+<!-- /usr/lib/systemd/systemd-cryptsetup attach host /dev/nvm0n1p2 - fido2-device=auto -->
+
+----
+
+export UUID=$(cryptsetup luksUUID /dev/nvm0n1p2)
+export PARTUUID=$(blkid -s PARTUUID -o value /dev/nvme0n1p2)
+# Create new btrfs partitions
+mkfs.btrfs /dev/mapper/host (UUID b2db0103-dcb8-41e1-b54d-167db15bc07d)
+mkfs.fat -F 32 /dev/nvme0n1p1
+mount /dev/mapper/host /mnt
+
+# Create sub volumes (After snapshots will be the excluded ones for backup)
+
+
+btrfs subvolume create /mnt/@
+
+for i in {snapshots,home,srv,usr,usr/local,swap,var};
+do btrfs subvolume create /mnt/@$i;
+done
+
+# exclude these dirs under /var from system snapshot
+for i in {abs,tmp,spool,log,cache,cache/pacman,cache/pacman/pkg};
+do btrfs subvolume create /mnt/@var/$i;
+done
+
+umount /mnt
+
+
+mount -o noatime,ssd,compress=zstd,subvol=@ /dev/mapper/host /mnt
+mount --mkdir -o noatime,ssd,compress=zstd,subvol=@snapshots /dev/mapper/host /mnt/.snapshots
+mount --mkdir /dev/nvme0n1p1 /mnt/boot
+
+# mount subvolumes
+# separate /{home,root,srv,swap,usr/local} from root filesystem
+for i in {home,srv,swap,usr/local};
+do mount --mkdir -o noatime,ssd,compress=zstd,subvol=@$i /dev/mapper/host /mnt/$i;
+done
+
+# separate /var/{tmp,spool,log} from root filesystem
+for i in {tmp,spool,log,cache/pacman/pkg};
+do mount --mkdir -o noatime,ssd,compress=zstd,subvol=@var/$i /dev/mapper/host /mnt/var/$i;
+done
+
+
+pacstrap -K /mnt base base-devel man-db man-pages texinfo git vim snapper intel-ucode xf86-video-intel linux-firmware sof-firmware linux-firmware-qlogic
+
+bash -c 'echo "KEYMAP=us" >> /mnt/etc/vconsole.conf'
+<!-- bash -c 'echo "host /dev/nvme0n1p2 - fido2-device=auto" >> /mnt/etc/crypttab' -->
+<!-- bash -c 'echo "host UUID=$UUID        none    timeout=180" >> /mnt/etc/crypttab' -->
+
+arch-chroot /mnt
+
+# User creation
+useradd -s /bin/bash -m -G wheel me
+<!-- useradd -s /bin/bash -U -m -G wheel --btrfs-subvolume-home me -->
+<!-- snapper --no-dbus -c me create-config /home/me -->
+passwd me
+visudo
+uncomment %wheel ALL=(ALL) ALL
+su -l hello
+
+
+git clone https://aur.archlinux.org/ast-firmware.git && cd ast-firmware && makepkg -Ccris
+git clone https://aur.archlinux.org/aic94xx-firmware.git && cd aic94xx-firmware && makepkg -Ccris 
+git clone https://aur.archlinux.org/wd719x-firmware.git && cd wd719x-firmware && makepkg -Ccris
+git clone https://aur.archlinux.org/upd72020x-fw.git && cd upd72020x-fw && makepkg -Ccris
+<!-- git clone https://aur.archlinux.org/bdf-unifont.git && cd bdf-unifont && makepkg -Ccris --skippgpcheck
+git clone https://aur.archlinux.org/grub-improved-luks2-git.git && grub-improved-luks2-git && makepkg -Ccris
+git clone https://aur.archlinux.org/efibootmgr-git.git && cd efibootmgr-git && makepkg -Ccris
+git clone https://aur.archlinux.org/mkinitcpio-ykfde.git && cd mkinitcpio-ykfde && makepkg -Ccris --skippgpcheck (check docs at /usr/share/doc/ykfde) -->
+
+exit
+
+
+# Install liquorix kernel
+
+curl 'https://liquorix.net/install-liquorix.sh' | bash
+
+
+# Timezone and locale
+ln -s /usr/share/zoneinfo/America/Montreal /etc/localtime
+vim /etc/locale.gen (uncomment en_US.UTF-8 UTF-8)
+echo LANG=en_US.UTF-8 > /etc/locale.conf
+export LANG=en_US.UTF-8
+locale-gen
+hwclock --systohc --utc
+
+
+# Hostname config
+echo host > /etc/hostname
+cat <<EOF />> /etc/hosts
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	host.localdomain	host
+EOF
+
+touch /mnt/swap/swapfile
+truncate -s 0 /mnt/swap/swapfile
+chmod 700 /mnt/swap
+chmod 600 /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile
+dd if=/dev/zero of=/mnt/swap/swapfile bs=1M count=16384 status=progress
+mkswap /mnt/swap/swapfile
+echo /swap/swapfile none swap defaults 0 0 >> /mnt/etc/fstab
+
+dd bs=512 count=4 if=/dev/random of=/mnt/ckf.bin iflag=fullblock
+chmod 600 /mnt/ckf.bin
+cryptsetup luksAddKey /dev/nvme0n1p2 /mnt/ckf.bin
+chmod 700 /mnt/lukskey
+
+
+pacman -Sy macchanger networkmanager openssh pam-u2f fwupd wireless-regdb grub efibootmgr grub-btrfs
+
+
+# vim /etc/mkinitcpio.conf 
+HOOKS=(base udev autodetect modconf block encrypt filesystems keyboard fsck grub-btrfs-overlayfs)
+<!-- HOOKS=(base systemd autodetect modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck grub-btrfs-overlayfs) -->
+<!-- HOOKS=(base systemd autodetect modconf kms keyboard sd-vconsole block ykfde sd-encrypt lvm2 filesystems fsck grub-btrfs-overlayfs) -->
+<!-- HOOKS=(base systemd autodetect modconf kms keyboard sd-vconsole block ykfde sd-encrypt sd-lvm2 filesystems fsck) -->
+MODULES=(vmd vfat i915 usbhid xhci_hcd)
+FILES=(/ckf.bin)
+BINARIES=(btrfs)
+mkinitcpio -P 
+
+# Configure your GRUB 
+
+<!-- grub-install --target=x86_64-efi --efi-directory=/boot --modules="luks2 part_gpt cryptodisk gcry_rijndael pbkdf2 gcry_sha512 btrfs" --bootloader-id=Host --removable -->
+
+echo "GRUB_CMDLINE_LINUX=\"cryptdevice=$PARTUUID=$UUID:host root=/dev/mapper/host cryptkey=rootfs:$cryptkey\"" >> $INST_MNT/etc/default/grub
+# Add on /etc/default/grub
+<!-- GRUB_CMDLINE_LINUX="splash quiet" -->
+<!-- GRUB_CMDLINE_LINUX="rd.luks.name=43e7cee4-92e7-4469-b107-edd1e9101c96=host rd.luks.options=fido2-device=auto root=/dev/mapper/host" -->
+GRUB_ENABLE_CRYPTODISK=y
+
+grub-install --target=x86_64-efi --efi-directory=/boot --modules="luks2 part_gpt cryptodisk gcry_rijndael pbkdf2 gcry_sha512 btrfs" --bootloader-id=Host
+
+
+<!-- # /grub-pre.cfg
+set crypto_uuid=$UUID
+cryptomount -u $crypto_uuid
+set root=crypto0
+set prefix=($root)/boot/grub
+insmod normal
+normal
+
+grub-mkimage -p /boot/grub -O x86_64-efi -c grub-pre.cfg -o /tmp/grubx64.efi luks2 part_gpt cryptodisk gcry_rijndael pbkdf2 gcry_sha512 btrfs
+
+install -v /tmp/grubx64.efi /boot/grub/grubx64.efi -->
+
+snapper -c root create
+<!-- snapper --no-dbus -c root create -->
+
+
+<!-- umount /.snapshots/
+rmdir /.snapshots/
+snapper --no-dbus -c root create-config /
+rmdir /.snapshots/
+mkdir /.snapshots/
+mount /.snapshots/
+snapper --no-dbus -c home create-config /home/
+systemctl enable /lib/systemd/system/snapper-* -->
+
+
+# /etc/crypttab
+swap	/swap	                /dev/urandom	swap,cipher=aes-xts-plain64,size=512
+tmp	    /tmp	                /dev/urandom	tmp,cipher=aes-xts-plain64,size=512
+host UUID=... none noauto
+
+
+# /etc/fstab
+/dev/nvme0n1p1               /boot   vfat   defaults        0  2
+/dev/mapper/lvm-root         /       ext4   defaults        0  0
+/dev/mapper/lvm-swap         none    swap   sw              0  0
+/dev/mapper/lvm-home         /home   ext4   defaults        0  0
+tmpfs                        /tmp    tmpfs  rw,nodev,nosuid,size=8G        0  0
+
+umount -R /mnt
+swapoff -a
+
+exit 
+
+# Booting over the new installation
+# Update fwupd
+
+fwupdmgr refresh
+fwupdmgr get-updates
+fwupdmgr update
+
+
+ip link list 
+ip link set dev wlp0s20f3 down
+macchanger -r wlp0s20f3
+
+/etc/systemd/system/macspoof@wlp0s20f3.service
+------
+[Unit]
+Description=macchanger on %I
+Wants=network-pre.target
+Before=network-pre.target
+BindsTo=sys-subsystem-net-devices-%i.device
+After=sys-subsystem-net-devices-%i.device
+
+[Service]
+ExecStart=/usr/bin/macchanger -r %I
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
+
+-------
+
+ip link set dev wlp0s20f3 up
+
+vim /etc/default/grub
+GRUB_CMDLINE_LINUX_DEFAULT=" ... ipv6.disable=1"
+GRUB_CMDLINE_LINUX=" ... ipv6.disable=1"
+
+mkinitcpio -P
+
+
+pacman -Syyyu xorg-server xorg-server-utils 
+
+
+cat <<EOF />>/etc/systemd/network/20-wired.network
+[Match]
+Name=en*
+Name=eth*
+
+[Network]
+DHCP=yes
+EOF
+
+systemctl restart systemd-networkd systemd-resolved
+
+
+# Configure pam-u2f
+mkdir ~/.config/ybk
+pamu2fcfg -o pam://hostname -i pam://hostname > ~/.config/ybk/u2f_keys
+
+# Change on the following files:
+```
+/etc/pam.d/sudo
+auth            sufficient      pam_u2f.so cue origin=pam://hostname appid=pam://hostname
+
+/etc/pam.d/system-auth
+auth            sufficient      pam_u2f.so cue origin=pam://hostname appid=pam://hostname
+
+/etc/ssh/sshd_config
+ChallengeResponseAuthentication no
+UsePAM yes
+
+```
+
+
+
+# cryptsetup luksFormat -v /dev/MyVolGroup/crypthome /etc/luks-keys/home
+# cryptsetup -d /etc/luks-keys/home open /dev/MyVolGroup/crypthome home
+# mkfs.ext4 /dev/mapper/home
+# mount /dev/mapper/home /home
+
+# Enable SSH with U2F (Device must be connected)
+ssh-keygen -t ed25519-sk
+
+
+# Update iptables
+
+# Generate an SSH Key for U2F
+https://wiki.archlinux.org/title/SSH_keys
+
+
+repo-add --verify --sign dawrlog.db.tar.gz *.pkg.tar.zst
+
+pacman -S --needed - < pkglist.txt
+
+# Install the following packages:
+base
+pam-u2f
+yubikey-full-disk-encryption
+yubikey-manager
+base-devel
+brave-bin
+discord
+macchanger
+nmap 
+curl
+code
+git
+docker
+python
+rust
+scala
+java
+ansible
+systat
+
+
+
+dbeaver
+dawrlog-awscli2
+dawrlog-awssamcli
+dawrlog-terraform
+dawrlog-kubectl
+dawrlog-gcloud
+dawrlog-azurecli
+
+/home/me/Documents/kde/azure/pkg/dawrlog-azurecli/usr/local/etc/dawrlog/bin/
+/home/me/Documents/kde/azure/pkg/dawrlog-azurecli/usr/local/etc/dawrlog/azure-cli/
+
+# Configure y2f for the passwordless sudo 
+# Configure y2f for the authentication for websites
+# Configure y2f for the SSH commands
+# Configure y2f for the data at rest
+
+
+# Automate the following under root
+pacman -Qtdq | pacman -Rns -
+find /etc /usr /opt | LC_ALL=C pacman -Qqo - 2>&1 >&- >/dev/null | cut -d ' ' -f 5-
+
+
+
+
+
+
+## Extra 
+
+
+dd bs=512 count=4 if=/dev/random of=/mnt/crypto_keyfile.bin iflag=fullblock
+chmod 600 /mnt/crypto_keyfile.bin
+cryptsetup luksAddKey /dev/sdX# /mnt/crypto_keyfile.bin
+
+
+# Create virtual partitions under luks encryption
+pvcreate /dev/mapper/lvm
+vgcreate host /dev/mapper/lvm
+lvcreate --size 16G host -n swap
+lvcreate --size 90G host -n root
+lvcreate -l +100%FREE host -n home
+mount /dev/mapper/lvm /mnt
+
+/etc/ykfde.conf
+YKFDE_LUKS_NAME
+YKFDE_DISK_UUID (UUID of /dev/nvmn0n1p2)
+
+cp /etc/ykfde.conf /mnt/
+ykfde-format -c aes-xts-plain64 -h sha512 -s 512 --use-random luksFormat --type luks2 /dev/nvme0n1p2
+
+ykfde-enroll -d /dev/nvme0n1p2 -s 1 -o -k
+ykpersonalize -v -1 -ochal-resp -ochal-hmac -ohmac-lt64 -oserial-api-visible -ochal-btn-trig
+
+lsusb 
+
+
+git clone https://aur.archlinux.org/mkinitcpio-ykfde.git
+udevadm control --reload-rules
+
+
+
+GRUB_CMDLINE_LINUX="rd.luks.uuid=b2db0103-dcb8-41e1-b54d-167db15bc07d=fido2-device=auto"
+
+
+
+
+
+grub-mkconfig -o /boot/grub/grub.cfg
+
+
+
+/etc/udev/rules.d/70-u2f.rules
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0113|0114|0115|0116|0120|0121|0200|0402|0403|0406|0407|0410", TAG+="uaccess", GROUP="plugdev", MODE="0660"
+

@@ -1,0 +1,23 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgname=$pkgprefix-awscli2
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official AWS client used at Dawrlog. It updates from official github repository from AWS."
+arch=("x86_64")
+url="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html"
+license=('custom')
+noextract=()
+source=("https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip")
+sha256sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/aws/install"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  chmod +x "${srcdir}/aws/install"
+  "${srcdir}/aws/install" -i "${pkgdir}${pkgpath}" -b "${pkgdir}/usr/local/bin"
+}

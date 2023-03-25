@@ -1,0 +1,12 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-kernel
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Licorix installer to be built per machine."
+arch=("x86_64")
+url="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+license=('custom')
+# noextract=()
+source=('https://liquorix.net/install-liquorix.sh')
+sha512sums=("SKIP")

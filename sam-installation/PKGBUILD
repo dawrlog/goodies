@@ -1,0 +1,22 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-awssamcli
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official AWS Serverless Application Manager client Official AWS client used at Dawrlog. It updates from official github repository from AWS."
+arch=("x86_64")
+url="https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html"
+license=('custom')
+noextract=()
+source=("https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip")
+sha512sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/install"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  "${srcdir}/install" -i "${pkgdir}${pkgpath}" -b "${pkgdir}/usr/local/bin"
+}

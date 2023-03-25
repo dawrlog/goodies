@@ -1,0 +1,25 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-gcloud
+pkgpath="/usr/local/etc/dawrlog/bin"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official Google Cloud Platform client used at Dawrlog. It updates from official repository from Google."
+arch=("x86_64")
+url="https://cloud.google.com/sdk/docs/install"
+license=('custom')
+# noextract=()
+source=("https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-422.0.0-linux-x86_64.tar.gz")
+sha512sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/google-cloud-sdk/install.sh"
+  chmod +x "${srcdir}/google-cloud-sdk/bin/gcloud"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  "${srcdir}/google-cloud-sdk/install.sh"
+  cp -r "${srcdir}/google-cloud-sdk" "${pkgdir}${pkgpath}"
+  export set=$PATH:"${pkgdir}${pkgpath}"
+}

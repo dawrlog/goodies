@@ -1,0 +1,24 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-kubectl
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official Kubectl client used at Dawrlog. It updates from official repository."
+arch=("x86_64")
+url="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+license=('custom')
+# noextract=()
+source=("https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl")
+sha512sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/kubectl"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  mv "${srcdir}/kubectl" "${pkgdir}${pkgpath}"
+  export set=$PATH:"${pkgdir}${pkgpath}/"
+}
+

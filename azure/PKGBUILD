@@ -1,0 +1,23 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-azurecli
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official Azure client used at Dawrlog. It updates from official repository from Azure."
+arch=("x86_64")
+url="https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=script"
+license=('custom')
+# noextract=()
+# source=("https://azurecliprod.blob.core.windows.net/install")
+# sha256sums=("SKIP")
+
+# prepare() {
+#   chmod +x "${srcdir}/install"
+# }
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  curl https://azurecliprod.blob.core.windows.net/install | bash
+  export set=$PATH:"${pkgdir}${pkgpath}"
+}

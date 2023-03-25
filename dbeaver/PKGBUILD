@@ -1,0 +1,24 @@
+# Maintainer: Dataware Logistics <contact@dawrlog.com>
+pkgprefix=dawrlog
+pkgname=$pkgprefix-dbeaver
+pkgpath="/usr/local/etc/dawrlog/bin/"
+pkgver=1.0.0
+pkgrel=0
+pkgdesc="Official Kubectl client used at Dawrlog. It updates from official repository."
+arch=("x86_64")
+url="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/"
+license=('custom')
+noextract=()
+source=("https://dbeaver.io/files/dbeaver-ce-latest-linux.gtk.x86_64-nojdk.tar.gz")
+sha512sums=("SKIP")
+
+prepare() {
+  chmod +x "${srcdir}/dbeaver/dbeaver"
+}
+
+package() {
+  mkdir -p "${pkgdir}${pkgpath}"
+  mv "${srcdir}/dbeaver" "${pkgdir}${pkgpath}"
+  export set=$PATH:"${pkgdir}${pkgpath}"
+}
+
