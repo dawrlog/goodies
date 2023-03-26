@@ -270,7 +270,7 @@ vim /etc/default/grub
 GRUB_CMDLINE_LINUX_DEFAULT=" ... ipv6.disable=1"
 GRUB_CMDLINE_LINUX=" ... ipv6.disable=1"
 
-iptables-restore < iptables.restore
+sh ./wkfilters.sh
 
 mkinitcpio -P
 https://github.com/dawrlog/goodies/blob/main/iptable.rules

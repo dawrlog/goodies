@@ -1,7 +1,0 @@
-#!/bin/bash
-iptables-restore < ./iptables.restore
-
-systemctl enable iptables.service
-systemctl start iptables.service
-
-iptables-save
