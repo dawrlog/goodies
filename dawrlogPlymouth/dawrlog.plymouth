@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Dawrlog
+Description=Dawrlog logo
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/dawrlog
+ScriptFile=/usr/share/plymouth/themes/dawrlog/dawrlog.script
+UseFirmwareBackground=false

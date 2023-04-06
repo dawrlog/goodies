@@ -67,4 +67,5 @@ terminal-border: "0"
     + label { width = 250 height = 20 align = "center" color = "#ffffff" font = "Terminus 16" text = "[↑ and ↓ Key] Navigation" }
     + label { width = 250 height = 20 align = "center" color = "#ffffff" font = "Terminus 16" text = "[E] Edit Selection" }
     + label { width = 250 height = 20 align = "center" color = "#ffffff" font = "Terminus 16" text = "[C] GRUB Commandline" }
+    + label { width = 250 height = 20 align = "center" color = "#ffffff" font = "Terminus 16" text = "You are on good hands with us at Dawrlog. =D " }
 }

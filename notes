@@ -275,6 +275,21 @@ GRUB_CMDLINE_LINUX=" ... ipv6.disable=1"
 GRUB_THEME="/usr/share/grub/themes/garuda-dr460nized/theme.txt" (To change for Dawrlog logo)
 GRUB_THEME="/usr/share/grub/themes/dawrlog/theme.txt" 
 
+sudo update-grub
+
+
+
+
+du -sk . 
+# use size reported above for: $blocks ( 181128)
+dd if=/dev/zero of=initramfs-linux-xanmod.img bs=1024 count=181128
+/sbin/mke2fs -F -m 0 -b 1024 initramfs-linux-xanmod.img 181128
+mount initramfs-linux-xanmod.img /mnt -t ext2 -o loop=/dev/loop0
+
+
+umount /mnt/initrd
+gzip /tmp/initrd.img
+
 git clone https://github.com/dawrlog/goodies
 sh ./wkfilters.sh
 nft -s list ruleset 
@@ -445,4 +460,10 @@ KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1050", ATTRS{idProduct
 
 ffmpeg -i dawrlog-splash.mp4 -r 10 splash.gif
 
+sudo cp -r dawrlogPlymouth /usr/share/plymouth/themes/dawrlog
+
+[Daemon]
+Theme=dawrlog
+ShowDelay=5
+DeviceTimeout=8
 
