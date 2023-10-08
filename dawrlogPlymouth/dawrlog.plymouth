@@ -1,6 +1,6 @@
 [Plymouth Theme]
-Name=Dawrlog
-Description=Dawrlog logo
+Name=dawrlog
+Description=dawrlog
 ModuleName=script
 
 [script]

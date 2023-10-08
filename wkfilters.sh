@@ -1,5 +1,5 @@
 #!/bin/bash
-pacman -S nftables sshguard
+pacman -S nftables sshguard --noconfirm
 nft -f ./nftables.conf
 sed -i 's/sshg-fw-iptables/sshg-fw-nft-sets/g' /etc/sshguard.conf
 

@@ -17,7 +17,7 @@ if (Plymouth.GetMode () == "shutdown")
 s = 0.75;
 
 icon_image = Image ("icon.png");
-icon_image = icon_image.Scale (180 * s , 120 * s);
+icon_image = icon_image.Scale (120 * s , 120 * s);
 icon = Sprite (icon_image);
 icon.SetX (Window.GetWidth ()  / 2 - icon_image.GetWidth()  / 2);
 icon.SetY ((Window.GetHeight() * yPos) - icon_image.GetHeight() / 2);
