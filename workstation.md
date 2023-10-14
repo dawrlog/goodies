@@ -11,8 +11,9 @@ ip addr show
 timedatectl set-ntp true
 
 cryptsetup luksFormat --align-payload=8192 -c aes-xts-plain64 -h sha512 -s 512 --use-random /dev/nvme0n1p2
-systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --fido2-device=auto
-/usr/lib/systemd/systemd-cryptsetup attach nene /dev/nvme0n1p2 - fido2-device=auto
+cryptsetup open /dev/nvme0n1p2 nene
+<!-- systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --fido2-device=auto -->
+<!-- /usr/lib/systemd/systemd-cryptsetup attach nene /dev/nvme0n1p2 - fido2-device=auto -->
 
 mkfs.vfat -F32 -n GIT /dev/nvme0n1p1
 mkfs.btrfs -L .trash /dev/mapper/nene
@@ -37,14 +38,14 @@ reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
 pacman-key --init
 pacman -Sy archlinux-keyring
 
-pacstrap -K /mnt base base-devel btrfs-progs intel-ucode mkinitcpio-nfs-utils xf86-video-intel xorg-server xf86-input-libinput linux-firmware sof-firmware linux-firmware-qlogic fwupd wireless-regdb networkmanager terminus-font man-db man-pages texinfo git vim plymouth snapper pam-u2f 
+pacstrap -K /mnt base base-devel btrfs-progs intel-ucode mkinitcpio-nfs-utils xf86-video-intel xorg-server xf86-input-libinput linux-firmware sof-firmware linux-firmware-qlogic fwupd wireless-regdb networkmanager terminus-font man-db man-pages texinfo git vim plymouth snapper pam-u2f macchanger openssh sddm plasma libreoffice terraform code dbeaver code git docker python rust 
 
 genfstab -U /mnt >> /mnt/etc/fstab
 
 arch-chroot /mnt
 
 # User creation
-useradd -s /bin/bash -m -G wheel me
+useradd -s /bin/bash -m -G wheel -G docker me
 passwd me
 visudo
 uncomment %wheel ALL=(ALL) ALL
@@ -115,10 +116,6 @@ git clone https://github.com/dawrlog/goodies.git && cd goodies
 mkdir /usr/share/plymouth/themes/dawrlog
 cp -r dawrlogPlymouth/* /usr/share/plymouth/themes/dawrlog
 
-fwupdmgr refresh
-fwupdmgr get-updates
-fwupdmgr update
-
 exit
 swapoff /mnt/btrfs/@swap/swapfile
 umount -R /mnt
@@ -129,22 +126,21 @@ nmcli device wifi connect <AP name> password <AP pwd>
 ip addr show
 # ssh root@<IP-OF-THE-FIRST-PC>
 
-pacman -Sy kde-applications #8 18 19 23 38 53 58 59 123 144 171 176 
+t0toR4$074!
 
-vim /etc/pacman.conf #Uncomment the lines below
-# [multilib]
-# Include = /etc/pacman.d/mirrorlist
+fwupdmgr refresh
+fwupdmgr get-updates
+fwupdmgr update
+
+echo "[multilib]" >> /etc/pacman.conf
+echo "Include = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
 
 curl 'https://blackarch.org/strap.sh' | bash
 curl 'https://raw.githubusercontent.com/dawrlog/goodies/main/wkfilters.sh' | bash
 
-pacman -Syu macchanger openssh sddm plasma libreoffice terraform code dbeaver wireshark nmap code git docker python rust 
 
-ip link list 
-ip link set dev enp0s31f6 down
+pacman -Syu tlp wireshark-qt wireshark-cli nmap kde-applications #8 18 19 23 38 53 58 59 123 144 171 176 
 
-curl https://raw.githubusercontent.com/dawrlog/goodies/main/macchanger.conf >> /etc/systemd/system/macspoof@enp0s31f6.service && systemctl enable macspoof@enp0s31f6.service
-
-ip link set dev enp0s31f6 up
+curl https://raw.githubusercontent.com/dawrlog/goodies/main/macchanger.conf >> /etc/systemd/system/macspoof@wlp0s20f3.service && systemctl enable macspoof@wlp0s20f3.service
 
 git clone https://aur.archlinux.org/brave-bin.git && cd brave-bin && makepkg -Ccris
